@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Text ⇄ Code Converter</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #2c3e50;
+      --input-bg: #f9f9f9;
+      --output-bg: #eef4f8;
+      --accent-color: #3498db;
+      --button-bg: #3498db;
+      --button-hover: #2980b9;
+    }
+
+    body.dark {
+      --bg-color: #1e1e1e;
+      --text-color: #ffffff;
+      --input-bg: #2c2c2c;
+      --output-bg: #333333;
+      --accent-color: #9b59b6;
+      --button-bg: #9b59b6;
+      --button-hover: #8e44ad;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: start;
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      background-color: var(--bg-color);
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      padding: 2rem;
+      max-width: 720px;
+      width: 100%;
+      border: 1px solid #ccc;
+      transition: background 0.3s ease;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--text-color);
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 1rem;
+      color: var(--text-color);
+    }
+
+    textarea, select, pre {
+      width: 100%;
+      padding: 1rem;
+      margin-top: 0.5rem;
+      font-family: monospace;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    pre {
+      background-color: var(--output-bg);
+      min-height: 120px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    button {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      background-color: var(--button-bg);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: var(--button-hover);
+    }
+
+    .theme-toggle {
+      margin-top: 1rem;
+      background-color: #888;
+      border: none;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      float: right;
+      width: auto;
+    }
+
+    @media screen and (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .theme-toggle {
+        float: none;
+        display: block;
+        margin: 1rem auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+    <h1>Text ⇄ Code Converter</h1>
+
+    <label for="textInput">Enter Text or Code:</label>
+    <textarea id="textInput" rows="4" placeholder="Type your text or code here..."></textarea>
+
+    <label for="conversionType">Select Conversion Type:</label>
+    <select id="conversionType">
+      <option value="text-binary">Text ➝ Binary</option>
+      <option value="binary-text">Binary ➝ Text</option>
+      <option value="text-hex">Text ➝ Hex</option>
+      <option value="hex-text">Hex ➝ Text</option>
+      <option value="text-decimal">Text ➝ Decimal</option>
+      <option value="decimal-text">Decimal ➝ Text</option>
+      <option value="text-morse">Text ➝ Morse</option>
+      <option value="morse-text">Morse ➝ Text</option>
+    </select>
+
+    <button onclick="convert()">Convert</button>
+
+    <label for="output">Output:</label>
+    <pre id="output"></pre>
+  </div>
+
+  <script>
+    const morseCode = {
+      'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..',
+      'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
+      'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+      'M': '--', 'N': '-.', 'O': '---', 'P': '.--.',
+      'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-',
+      'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+      'Y': '-.--', 'Z': '--..',
+      '0': '-----', '1': '.----', '2': '..---', '3': '...--',
+      '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+      '8': '---..', '9': '----.',
+      ' ': '/', ',': '--..--', '.': '.-.-.-', '?': '..--..',
+      '!': '-.-.--', ':': '---...', "'": '.----.', '-': '-....-',
+      '/': '-..-.', '(': '-.--.', ')': '-.--.-'
+    };
+
+    const inverseMorse = Object.fromEntries(
+      Object.entries(morseCode).map(([k, v]) => [v, k])
+    );
+
+    function convert() {
+      const input = document.getElementById('textInput').value.trim();
+      const type = document.getElementById('conversionType').value;
+      let output = '';
+
+      switch (type) {
+        case 'text-binary':
+          output = input.split('').map(ch =>
+            ch.charCodeAt(0).toString(2).padStart(8, '0')
+          ).join(' ');
+          break;
+
+        case 'binary-text':
+          output = input.split(/\s+/).map(bin =>
+            /^[01]{8}$/.test(bin) ? String.fromCharCode(parseInt(bin, 2)) : '?'
+          ).join('');
+          break;
+
+        case 'text-hex':
+          output = input.split('').map(ch =>
+            ch.charCodeAt(0).toString(16).padStart(2, '0')
+          ).join(' ');
+          break;
+
+        case 'hex-text':
+          output = input.split(/\s+/).map(hex =>
+            /^[0-9a-fA-F]{2}$/.test(hex) ? String.fromCharCode(parseInt(hex, 16)) : '?'
+          ).join('');
+          break;
+
+        case 'text-decimal':
+          output = input.split('').map(ch =>
+            ch.charCodeAt(0).toString(10)
+          ).join(' ');
+          break;
+
+        case 'decimal-text':
+          output = input.split(/\s+/).map(dec =>
+            /^\d+$/.test(dec) ? String.fromCharCode(parseInt(dec, 10)) : '?'
+          ).join('');
+          break;
+
+        case 'text-morse':
+          output = input.toUpperCase().split('').map(ch =>
+            morseCode[ch] || '?'
+          ).join(' ');
+          break;
+
+        case 'morse-text':
+          output = input.split(' ').map(code =>
+            inverseMorse[code] || '?'
+          ).join('');
+          break;
+
+        default:
+          output = 'Invalid conversion type.';
+      }
+
+      document.getElementById('output').textContent = output;
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+    }
+  </script>
+</body>
+</html>
